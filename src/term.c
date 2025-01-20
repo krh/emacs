@@ -244,6 +244,20 @@ tty_reset_terminal_modes (struct terminal *terminal)
 /* Flag the end of a display update on a termcap terminal. */
 
 static void
+tty_update_begin(struct frame *)
+{
+  const char *ts = tty->TS_set_background;
+  struct face *face = FACE_FROM_ID (f, DEFAULT_FACE_ID);
+  unsigned long bg = face->background;
+  if (face_tty_specified_color (bg) && ts)
+    {
+      char *p = tparam (ts, NULL, 0, bg, 0, 0, 0);
+      OUTPUT (tty, p);
+      xfree (p);
+    }
+}
+
+static void
 tty_update_end (struct frame *f)
 {
   struct tty_display_info *tty = FRAME_TTY (f);
@@ -2101,7 +2115,19 @@ turn_off_face (struct frame *f, struct face *face)
 	   && face->foreground != FACE_TTY_DEFAULT_FG_COLOR)
 	  || (face->background != FACE_TTY_DEFAULT_COLOR
 	      && face->background != FACE_TTY_DEFAULT_BG_COLOR)))
-    OUTPUT1_IF (tty, tty->TS_orig_pair);
+
+    {
+      const char *ts = tty->TS_set_background;
+      struct face *face = FACE_FROM_ID (f, DEFAULT_FACE_ID);
+      unsigned long bg = face->background;
+      OUTPUT1_IF (tty, tty->TS_orig_pair);
+      if (face_tty_specified_color (bg) && ts)
+	{
+          char *p = tparam (ts, NULL, 0, bg, 0, 0, 0);
+	  OUTPUT (tty, p);
+	  xfree (p);
+	}
+    }
 }
 
 #endif /* !HAVE_ANDROID */
@@ -4101,6 +4127,7 @@ set_tty_hooks (struct terminal *terminal)
   terminal->ring_bell_hook = &tty_ring_bell;
   terminal->reset_terminal_modes_hook = &tty_reset_terminal_modes;
   terminal->set_terminal_modes_hook = &tty_set_terminal_modes;
+  terminal->update_begin_hook = &tty_update_begin;
   terminal->update_end_hook = &tty_update_end;
 #ifdef MSDOS
   terminal->menu_show_hook = &x_menu_show;

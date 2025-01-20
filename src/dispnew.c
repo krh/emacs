@@ -5816,11 +5816,6 @@ write_row (struct frame *f, int vpos, bool updating_menu_p)
   struct glyph_row *desired_row = MATRIX_ROW (desired_matrix, vpos);
   bool must_write_whole_line_p;
   bool write_spaces_p = FRAME_MUST_WRITE_SPACES (f);
-  bool colored_spaces_p = (FACE_FROM_ID (f, DEFAULT_FACE_ID)->background
-			   != FACE_TTY_DEFAULT_BG_COLOR);
-
-  if (colored_spaces_p)
-    write_spaces_p = 1;
 
   /* Current row not enabled means it has unknown contents.  We must
      write the whole desired line in that case.  */
@@ -5957,7 +5952,7 @@ write_row (struct frame *f, int vpos, bool updating_menu_p)
 
   /* Compute number of leading blanks in old and new contents.  */
   osp = count_blanks (f, obody, olen);
-  nsp = (colored_spaces_p ? 0 : count_blanks (f, nbody, nlen));
+  nsp = count_blanks (f, nbody, nlen);
 
   /* Compute number of matching chars starting with first non-blank.  */
   begmatch = count_match (obody + osp, obody + olen,
